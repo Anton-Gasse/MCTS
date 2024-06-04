@@ -3,6 +3,7 @@ from __future__ import division
 import time
 import math
 import random
+import pickle
 
 
 def randomPolicy(state):
@@ -34,16 +35,23 @@ class treeNode():
         return "%s: {%s}"%(self.__class__.__name__, ', '.join(s))
 
 class mcts():
-    def __init__(self, timeLimit=None, iterationLimit=None, explorationConstant=1 / math.sqrt(2),
-                 rolloutPolicy=randomPolicy):
-        if timeLimit != None:
-            if iterationLimit != None:
+    def __init__(self, initialState: treeNode = None, path: str = None, timeLimit=None, iterationLimit=None, 
+                 explorationConstant=1 / math.sqrt(2),rolloutPolicy=randomPolicy):
+        if initialState is not None:
+            self.root = treeNode(initialState, None)
+        elif path is not None:
+            self.load(path=path)
+        else:
+            raise ValueError("Either initialState or path must be provided.")
+
+        if timeLimit is not None:
+            if iterationLimit is not None:
                 raise ValueError("Cannot have both a time limit and an iteration limit")
             # time taken for each MCTS search in milliseconds
             self.timeLimit = timeLimit
             self.limitType = 'time'
         else:
-            if iterationLimit == None:
+            if iterationLimit is None:
                 raise ValueError("Must have either a time limit or an iteration limit")
             # number of iterations of the search
             if iterationLimit < 1:
@@ -53,8 +61,7 @@ class mcts():
         self.explorationConstant = explorationConstant
         self.rollout = rolloutPolicy
 
-    def search(self, initialState, needDetails=False):
-        self.root = treeNode(initialState, None)
+    def search(self, needDetails=False):
 
         if self.limitType == 'time':
             timeLimit = time.time() + self.timeLimit / 1000
@@ -79,7 +86,7 @@ class mcts():
         reward = self.rollout(node.state)
         self.backpropogate(node, reward)
 
-    def selectNode(self, node):
+    def selectNode(self, node: treeNode):
         while not node.isTerminal:
             if node.isFullyExpanded:
                 node = self.getBestChild(node, self.explorationConstant)
@@ -87,7 +94,7 @@ class mcts():
                 return self.expand(node)
         return node
 
-    def expand(self, node):
+    def expand(self, node: treeNode):
         actions = node.state.getPossibleActions()
         for action in actions:
             if action not in node.children:
@@ -117,3 +124,18 @@ class mcts():
             elif nodeValue == bestValue:
                 bestNodes.append(child)
         return random.choice(bestNodes)
+    
+    def save(self, path: str) -> bool:
+        try:
+            with open( path, "wb" ) as f:
+                pickle.dump(self.root, f)
+                return True
+        except Exception as e:
+            print(e)
+
+    def load(self, path: str) -> bool:
+        try:
+            with open( path, "rb" ) as f:
+                self.root = pickle.load(f)
+        except Exception as e:
+            print(e)

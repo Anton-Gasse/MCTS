@@ -75,7 +75,15 @@ class Action():
 
 if __name__=="__main__":
     initialState = NaughtsAndCrossesState()
-    searcher = mcts(timeLimit=1000)
-    action = searcher.search(initialState=initialState)
+
+    searcher = mcts(initialState=initialState, timeLimit=1000)
+    action = searcher.search()
+
+    print(action)
+
+    searcher.save("./root")
+
+    newSearcher = mcts(path="./root", iterationLimit=8000)
+    action = newSearcher.search()
 
     print(action)

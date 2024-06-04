@@ -25,13 +25,20 @@ Once these have been implemented, running MCTS is as simple as initializing your
 ```python
 from mcts import mcts
 
-searcher = mcts(timeLimit=1000)
-bestAction = searcher.search(initialState=initialState)
+searcher = mcts(initialState=initialState, timeLimit=1000)
+bestAction = searcher.search()
+searcher.save(path='./root')
+
+newSearcher = mcts(path="./root", iterationLimit=80000)
+action = newSearcher.search()
+
+print(action)
 ```
 Here the unit of `timeLimit=1000` is millisecond. You can also use `iterationLimit=1600` to specify the number of rollouts. Exactly one of `timeLimit` and `iterationLimit` should be specified. The expected reward of best action can be got by setting `needDetails` to `True` in `searcher`.
 
+You can save the current progress with the save() method and create a new instance providing the path to load the progress.
 ```python
-resultDict = searcher.search(initialState=initialState, needDetails=True)
+resultDict = searcher.search(needDetails=True)
 print(resultDict.keys()) #currently includes dict_keys(['action', 'expectedReward'])
 ```
 
